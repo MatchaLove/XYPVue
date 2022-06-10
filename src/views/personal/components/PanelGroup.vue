@@ -1,54 +1,58 @@
 <template>
   <el-row :gutter="40" class="panel-group">
+    <!-- 信用评估 -->
     <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
-      <div class="card-panel" @click="handleSetLineChartData('newVisitis')">
+      <div class="card-panel" @click="handlePanelNumber(0)">
         <div class="card-panel-icon-wrapper icon-people">
-          <svg-icon icon-class="peoples" class-name="card-panel-icon" />
+          <svg-icon icon-class="star" class-name="card-panel-icon" />
         </div>
         <div class="card-panel-description">
           <div class="card-panel-text">
-            用户数目
+            信用风险
           </div>
-          <count-to :start-val="0" :end-val="89" :duration="1600" class="card-panel-num" />
+          <count-to :start-val="0" :end-val="10" :duration="2600" class="card-panel-num" />%
         </div>
       </div>
     </el-col>
+    <!-- 授信额度 -->
     <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
-      <div class="card-panel" @click="handleSetLineChartData('messages')">
+      <div class="card-panel" @click="handlePanelNumber(1)">
         <div class="card-panel-icon-wrapper icon-message">
-          <svg-icon icon-class="edit" class-name="card-panel-icon" />
+          <svg-icon icon-class="money" class-name="card-panel-icon" />
         </div>
         <div class="card-panel-description">
           <div class="card-panel-text">
-            信用待评价
+            授信额度
           </div>
-          <count-to :start-val="0" :end-val="24" :duration="1600" class="card-panel-num" />
+          <count-to :start-val="0" :end-val="20000" :duration="3000" class="card-panel-num" />元
         </div>
       </div>
     </el-col>
+    <!-- 财务报告 -->
     <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
-      <div class="card-panel" @click="handleSetLineChartData('purchases')">
+      <div class="card-panel" @click="handlePanelNumber(2)">
         <div class="card-panel-icon-wrapper icon-money">
-          <svg-icon icon-class="tree-table" class-name="card-panel-icon" />
+          <svg-icon icon-class="chart" class-name="card-panel-icon" />
         </div>
         <div class="card-panel-description">
           <div class="card-panel-text">
-            待办理业务
+            财务报告
           </div>
-          <count-to :start-val="0" :end-val="101" :duration="1600" class="card-panel-num"/>
+          <!--          <count-to :start-val="0" :end-val="9280" :duration="3200" class="card-panel-num" />-->
         </div>
       </div>
     </el-col>
+    <!-- 风险事件 -->
     <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
-      <div class="card-panel" @click="handleSetLineChartData('shoppings')">
+      <div class="card-panel" @click="handlePanelNumber(3)">
         <div class="card-panel-icon-wrapper icon-shopping">
-          <svg-icon icon-class="blockchain" class-name="card-panel-icon" />
+          <svg-icon icon-class="education" class-name="card-panel-icon" />
         </div>
         <div class="card-panel-description">
           <div class="card-panel-text">
-            已上链区块
+            风险事件
           </div>
-          <count-to :start-val="0" :end-val="407" :duration="1600" class="card-panel-num" />
+          <count-to :start-val="0" :end-val="3" :duration="3600" class="card-panel-num" />条
         </div>
       </div>
     </el-col>
@@ -63,8 +67,8 @@ export default {
     CountTo
   },
   methods: {
-    handleSetLineChartData(type) {
-      this.$emit('handleSetLineChartData', type)
+    handlePanelNumber(panelNumber) {
+      this.$emit('handlePanelNumber', panelNumber)
     }
   }
 }
@@ -75,7 +79,7 @@ export default {
   margin-top: 18px;
 
   .card-panel-col {
-    margin-bottom: 32px;
+    margin-bottom: 18px;
   }
 
   .card-panel {

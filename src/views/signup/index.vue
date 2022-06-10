@@ -47,7 +47,34 @@
           <svg-icon :icon-class="passwordType === 'password' ? 'eye' : 'eye-open'" />
         </span>
       </el-form-item>
-
+      <el-form-item prop="nickname">
+        <span class="svg-container">
+          <svg-icon icon-class="people" />
+        </span>
+        <el-input
+          ref="nickname"
+          v-model="signupForm.nickname"
+          placeholder="昵称"
+          name="nickname"
+          type="text"
+          tabindex="3"
+          auto-complete="on"
+        />
+      </el-form-item>
+      <el-form-item prop="company">
+        <span class="svg-container">
+          <svg-icon icon-class="peoples" />
+        </span>
+        <el-input
+          ref="company"
+          v-model="signupForm.company"
+          placeholder="所属企业信用代码"
+          name="company"
+          type="text"
+          tabindex="4"
+          auto-complete="on"
+        />
+      </el-form-item>
       <el-button
         :loading="loading"
         type="primary"
@@ -69,6 +96,7 @@
 
 <script>
 import { validUsername } from '@/utils/validate'
+import { signUp } from '@/api/user'
 
 export default {
   name: 'Signup',
@@ -89,16 +117,26 @@ export default {
         callback()
       }
     }
+    const validateCompany = (rule, value, callback) => {
+      if (value.length < 18) {
+        callback(new Error('The identifier should be 18 digits'))
+      } else {
+        callback()
+      }
+    }
     return {
       signupForm: {
         // 注册框默认值
         username: '',
-        password: ''
+        password: '',
+        nickname: '',
+        company: ''
       },
       // 注册验证法则
       signupRules: {
         username: [{ required: true, trigger: 'blur', validator: validateUsername }],
-        password: [{ required: true, trigger: 'blur', validator: validatePassword }]
+        password: [{ required: true, trigger: 'blur', validator: validatePassword }],
+        company: [{ required: true, trigger: 'blur', validator: validateCompany }]
       },
       // 注册按钮加载图标
       loading: false,
@@ -132,6 +170,7 @@ export default {
     },
     handleSignup() {
       this.$refs.signupForm.validate(valid => {
+        // eslint-disable-next-line no-constant-condition
         if (valid || true) {
           this.loading = true
           this.$store.dispatch('user/signup', this.signupForm).then(() => {
@@ -145,6 +184,7 @@ export default {
           }).catch(() => {
             this.loading = false
           })
+          // signUp(this.signupForm).then(({ data }) => {})
         } else {
           console.log('error submit!!')
           return false

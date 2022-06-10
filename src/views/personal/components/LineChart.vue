@@ -64,7 +64,7 @@ export default {
     setOptions({ expectedData, actualData } = {}) {
       this.chart.setOption({
         xAxis: {
-          data: ['5.7', '5.8', '5.9', '5.10', '5.11', '5.12', '5.13'],
+          data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
           boundaryGap: false,
           axisTick: {
             show: false
@@ -90,7 +90,7 @@ export default {
           }
         },
         legend: {
-          data: ['上链区块数目']
+          data: ['expected', 'actual']
         },
         series: [{
           name: 'expected', itemStyle: {
@@ -109,7 +109,7 @@ export default {
           animationEasing: 'cubicInOut'
         },
         {
-          name: '上链区块数目',
+          name: 'actual',
           smooth: true,
           type: 'line',
           itemStyle: {

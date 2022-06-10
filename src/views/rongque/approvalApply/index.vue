@@ -1,78 +1,209 @@
 <template>
-  <div class="app-container">
-    <el-form ref="form" :model="form" label-width="120px">
-      <el-form-item label="Activity name">
-        <el-input v-model="form.name" />
+  <div class="app-container" style="margin-left: 30px">
+    <el-form ref="form" label-position="left" :model="form" label-width="100px">
+      <el-form-item label="公司名称">
+        <el-input v-model="form.companyname" />
       </el-form-item>
-      <el-form-item label="Activity zone">
-        <el-select v-model="form.region" placeholder="please select your zone">
-          <el-option label="Zone one" value="shanghai" />
-          <el-option label="Zone two" value="beijing" />
+      <el-form-item label="信用代码">
+        <el-input v-model="form.identifier" />
+      </el-form-item>
+      <el-form-item label="申请业务">
+        <el-select v-model="form.businessid" placeholder="选择业务类型" @change="selectChanged">
+          <el-option
+            v-for="item in businesses"
+            :key="item.businessid"
+            :label="item.businessname"
+            :value="item.businessid"
+          />
         </el-select>
       </el-form-item>
-      <el-form-item label="Activity time">
-        <el-col :span="11">
-          <el-date-picker v-model="form.date1" type="date" placeholder="Pick a date" style="width: 100%;" />
-        </el-col>
-        <el-col :span="2" class="line">-</el-col>
-        <el-col :span="11">
-          <el-time-picker v-model="form.date2" type="fixed-time" placeholder="Pick a time" style="width: 100%;" />
-        </el-col>
+      <!--      <el-form-item label="备注">-->
+      <!--        <el-input v-model="form.remark" type="textarea" />-->
+      <!--      </el-form-item>-->
+      <el-form-item label="所需材料">
+        <el-upload
+          ref="upload"
+          name="files"
+          :data="form"
+          class="upload-demo"
+          action="http://localhost:8080/application/submit"
+          :on-preview="handlePreview"
+          :on-remove="handleRemove"
+          :file-list="files"
+          :auto-upload="false"
+        >
+          <el-button slot="trigger" size="small" type="primary" style="margin-right: 10px">选取文件</el-button>
+          <el-button size="small" type="success" @click="submitUpload">提交申请</el-button>
+          <small style="margin-left: 20px">请将所有材料合成一个PDF文件后提交</small>
+          <!--          <el-button style="margin-left: 10px;" size="small" type="success" @click="submitUpload">上传</el-button>-->
+        </el-upload>
+
       </el-form-item>
-      <el-form-item label="Instant delivery">
-        <el-switch v-model="form.delivery" />
-      </el-form-item>
-      <el-form-item label="Activity type">
-        <el-checkbox-group v-model="form.type">
-          <el-checkbox label="Online activities" name="type" />
-          <el-checkbox label="Promotion activities" name="type" />
-          <el-checkbox label="Offline activities" name="type" />
-          <el-checkbox label="Simple brand exposure" name="type" />
-        </el-checkbox-group>
-      </el-form-item>
-      <el-form-item label="Resources">
-        <el-radio-group v-model="form.resource">
-          <el-radio label="Sponsor" />
-          <el-radio label="Venue" />
-        </el-radio-group>
-      </el-form-item>
-      <el-form-item label="Activity form">
-        <el-input v-model="form.desc" type="textarea" />
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" @click="onSubmit">Create</el-button>
-        <el-button @click="onCancel">Cancel</el-button>
-      </el-form-item>
+      <el-table v-loading="listLoading" border :data="filelist" empty-text="无需上传文件">
+        <!--          <el-table-column type="index" align="center" :index="indexMethod" />-->
+        <el-table-column label="材料清单" align="left" min-width="400" prop="materialname" />
+        <el-table-column label="材料形式" align="center" width="130" prop="style">
+          <template v-slot="{row}">
+            <el-tag v-if="row.type === 1">原件</el-tag>
+            <el-tag v-else>复印件</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="材料类型" align="center" width="130" prop="type">
+          <template v-slot="{row}">
+            <el-tag v-if="row.type === 1">必需</el-tag>
+            <el-tag v-else>次要材料</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="来源渠道" align="center" width="130" prop="resource" />
+        <el-table-column label="文件下载" align="center" width="200">
+          <template v-slot="{row}">
+            <el-button v-if="row.ifdemofile" type="primary" size="mini" @click="getDemoFile(row)">示例样本</el-button>
+            <el-button v-if="row.ifemptyfile" type="primary" size="mini" @click="getEmptyFile(row)">空白模板</el-button>
+            <span v-if="!(row.ifdemofile+row.ifemptyfile)">无</span>
+          </template>
+        </el-table-column>
+      </el-table>
     </el-form>
   </div>
 </template>
 
 <script>
+import { getAllFile, getBusinessCredit, getCompanyInfo, getMainFile, getMaterialFile } from '@/api/rongque'
+
 export default {
   data() {
     return {
       form: {
-        name: '',
-        region: '',
-        date1: '',
-        date2: '',
-        delivery: false,
-        type: [],
-        resource: '',
-        desc: ''
-      }
+        identifier: '',
+        companyname: '',
+        businessid: '',
+        remark: ''
+      },
+      files: [],
+      filelist: null,
+      businesses: null,
+      listLoading: false,
+      credit: null,
+      mincredit: 0
     }
   },
+  created() {
+    this.getInformation()
+  },
   methods: {
-    onSubmit() {
-      this.$message('submit!')
+    indexMethod(index) {
+      return (this.listQuery.current - 1) * this.listQuery.size + index + 1
     },
-    onCancel() {
-      this.$message({
-        message: 'cancel!',
-        type: 'warning'
+    getInformation() {
+      // TODO 页面初始化时获取基本信息作为表单的默认值
+      getCompanyInfo({ username: this.$store.state.user.username }).then(({ data }) => {
+        this.form.identifier = data.identifier
+        this.form.companyname = data.companyname
+        this.businesses = data.businesses
+        this.credit = data.credit
       })
+    },
+    selectChanged() {
+      console.log(this.form.businessid)
+      getBusinessCredit({ businessid: this.form.businessid, identifier: this.form.identifier }).then(({ data }) => {
+        this.mincredit = data.mincredit
+        if (data.appexist === 1) {
+          this.$alert('您已提交过该申请，请勿重复申请', '已申请', {
+            confirmButtonText: '确定',
+            callback: action => {
+              this.form.businessid = ''
+            }
+          })
+        } else if (this.credit >= this.mincredit) {
+          this.$alert('您信用符合要求，申请时可只提交必要材料,次要材料容缺后补', '信用合格', {
+            confirmButtonText: '确定',
+            callback: action => {
+              // this.$router.push('/credit/creditInquiry')
+              getMainFile({ businessid: this.form.businessid }).then(({ data }) => {
+                this.filelist = data
+              })
+            }
+          })
+        } else {
+          this.$alert('您的信用暂不满足容缺办理条件，申请时需提交全部材料', '信用缺失', {
+            confirmButtonText: '确定',
+            callback: action => {
+              // this.$router.push('/credit/creditInquiry')
+              getAllFile({ businessid: this.form.businessid }).then(({ data }) => {
+                this.filelist = data
+              })
+            }
+          })
+        }
+      })
+    },
+    getDemoFile(row) {
+      getMaterialFile({ 'id': row.id, 'type': 1 }).then(
+        function(response) {
+          const content = response.data
+          const blob = new Blob([content], { type: 'application/zip' })
+          if ('download' in document.createElement('a')) {
+            // 非IE下载
+            const elink = document.createElement('a')
+            elink.download = row.materialname
+            elink.style.display = 'none'
+            elink.href = URL.createObjectURL(blob)
+            document.body.appendChild(elink)
+            elink.click()
+            // 释放URL对象
+            URL.revokeObjectURL(elink.href)
+            document.body.removeChild(elink)
+          } else {
+            navigator.msSaveBlob(blob, name)
+          }
+          // eslint-disable-next-line handle-callback-err
+        }, function(err) {
+
+        }
+      )
+    },
+    getEmptyFile(row) {
+      getMaterialFile({ 'id': row.id, 'type': 0 }).then(
+        function(response) {
+          const content = response.data
+          const blob = new Blob([content], { type: 'application/zip' })
+          if ('download' in document.createElement('a')) {
+            // 非IE下载
+            const elink = document.createElement('a')
+            elink.download = row.materialname
+            elink.style.display = 'none'
+            elink.href = URL.createObjectURL(blob)
+            document.body.appendChild(elink)
+            elink.click()
+            // 释放URL对象
+            URL.revokeObjectURL(elink.href)
+            document.body.removeChild(elink)
+          } else {
+            navigator.msSaveBlob(blob, name)
+          }
+          // eslint-disable-next-line handle-callback-err
+        }, function(err) {
+
+        }
+      )
+    },
+    submitUpload() {
+      console.log(this.form.businessid)
+      this.$refs.upload.submit()
+      this.$alert('您的申请已成功提交', '申请成功', {
+            confirmButtonText: '确定',
+            callback: action => {
+              this.$router.push('/rongque/progressInquiry')
+            }
+          })
+    },
+    handleRemove(file, files) {
+      console.log(file, files)
+    },
+    handlePreview(file) {
+      console.log(file)
     }
+
   }
 }
 </script>
